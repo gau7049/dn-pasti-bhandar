@@ -2,7 +2,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     initMobileMenu();
     initItemsFilter();
-    initQuoteForm();
+    initAutoplayMobileCarousel();
 });
 
 /**
@@ -43,11 +43,10 @@ function initItemsFilter() {
                 const category = node.getAttribute("data-category");
                 if (filterValue === "all" || category === filterValue) {
                     node.style.display = "block";
-                    // Brief fade-in visual simulation
-                    node.style.opacity = "1";
+                    setTimeout(() => { node.style.opacity = "1"; }, 10);
                 } else {
-                    node.style.display = "none";
                     node.style.opacity = "0";
+                    node.style.display = "none";
                 }
             });
         });
@@ -55,33 +54,45 @@ function initItemsFilter() {
 }
 
 /**
- * Client Callback Lead Form Handler
+ * Clean JavaScript Autoplay engine for the native mobile gallery carousel
  */
-function initQuoteForm() {
-    const quoteForm = document.getElementById("quoteForm");
-    const successMessage = document.getElementById("formSuccessMessage");
+function initAutoplayMobileCarousel() {
+    const track = document.getElementById("galleryCarousel");
+    if (!track) return;
 
-    if (quoteForm) {
-        quoteForm.addEventListener("submit", (e) => {
-            e.preventDefault(); // Stop page reload
+    let carouselInterval;
 
-            // Gather inputs for any potential future API extension integration
-            const name = document.getElementById("clientName").value;
-            const phone = document.getElementById("clientPhone").value;
-            const type = document.getElementById("scrapType").value;
+    function startAutoplay() {
+        // Only run autoplay loops if screen width matches mobile layout break limits (< 768px)
+        if (window.innerWidth > 768) return;
 
-            console.log(`Lead Generated Successfully: ${name} | ${phone} | ${type}`);
-
-            // Visual feedback transition
-            quoteForm.reset();
-            if (successMessage) {
-                successMessage.style.display = "block";
-                
-                // Automatically clear message notice after 6 seconds
-                setTimeout(() => {
-                    successMessage.style.display = "none";
-                }, 6000);
+        carouselInterval = setInterval(() => {
+            const maxScrollLeft = track.scrollWidth - track.clientWidth;
+            
+            // If slider has reached the end edge loop back smoothly to start index 0
+            if (track.scrollLeft >= maxScrollLeft - 5) {
+                track.scrollTo({ left: 0, behavior: "smooth" });
+            } else {
+                // Advance forward by one full card width column stride
+                track.scrollBy({ left: 275, behavior: "smooth" });
             }
-        });
+        }, 3500); // Ticks every 3.5 seconds
     }
+
+    function stopAutoplay() {
+        clearInterval(carouselInterval);
+    }
+
+    // Initialize loop engine
+    startAutoplay();
+
+    // Pause animation threads if user actively initiates manual scroll gestures
+    track.addEventListener("touchstart", stopAutoplay, { passive: true });
+    track.addEventListener("touchend", startAutoplay, { passive: true });
+    
+    // Clear and re-verify context limits dynamically if phone view shifts rotation angles
+    window.addEventListener("resize", () => {
+        stopAutoplay();
+        startAutoplay();
+    });
 }
